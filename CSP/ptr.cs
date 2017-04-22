@@ -21,6 +21,11 @@ namespace CSTD
             return this.result[resultptr];
         }
 
+        public void change(T content)
+        {
+            this.result[resultptr] = content;
+        }
+
         /*public T at(int sub)
         {
             return this.result[sub];
@@ -30,10 +35,5 @@ namespace CSTD
         {
             return result.Count;
         }*/
-
-        public void change(T content)
-        {
-            this.result[resultptr] = content;
-        }
     }
 }

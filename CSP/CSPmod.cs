@@ -15,7 +15,7 @@ namespace CSP
         private static bool recursion1(LT arg,List<LT> parameters,local_constraint con,bool need_var,int shrink_position,float it)
         {
             if (need_var)
-                return need_var;
+                return true;
 
             if (arg.Count == parameters.Count)
             {
@@ -27,19 +27,19 @@ namespace CSP
                 if ( arg.Count == shrink_position )
                 {
                     arg.Add(it);
-                    recursion1(arg,parameters,con,need_var,shrink_position,it);
+                    need_var=recursion1(arg,parameters,con,false,shrink_position,it);
                     cstl.pop_back(arg);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.Assert(arg.Count!=shrink_position);
+                    cstl.assert(arg.Count!=shrink_position);
                     if ( parameters[arg.Count].Count==0 )
                     { need_var = true; }
 
                     foreach (float i in parameters[arg.Count])
                     {
                         arg.Add(i);
-                        recursion1(arg,parameters,con,need_var,shrink_position,it);
+                        need_var=recursion1(arg,parameters,con,need_var,shrink_position,it);
                         cstl.pop_back(arg);
 
                         if ( need_var )
@@ -57,14 +57,14 @@ namespace CSP
             HashSet<string> modify_variable,
             uint generalized_arc_consistency_upperbound,
             List<local_constraint> constraint_set,
-            RESULT result) //原版中result是数组指针（迭代器）
+            RESULT result)
         {
-            System.Diagnostics.Debug.Assert(partial_assignment.Count <= variable.Count);
+            cstl.assert(partial_assignment.Count <= variable.Count);
 
             if ( modify_variable.Count == 1 )
             {
                 var mit = modify_variable.First();
-                System.Diagnostics.Debug.Assert( mit != modify_variable.Last());
+                cstl.assert( mit != modify_variable.Last());
                 var pit = partial_assignment[mit];
                 if( pit != partial_assignment.Last().Value)
                 {
@@ -87,7 +87,7 @@ namespace CSP
                 return result;
             }
 
-            while (!(modify_variable.Count == 0))
+            while (modify_variable.Count!=0)
             {
                 string current = modify_variable.First();
                 modify_variable.Remove(current);
@@ -101,7 +101,7 @@ namespace CSP
                         foreach (var t in con.related_var)
                         {
                             var it = variable[t];
-                            //System.Diagnostics.Debug.Assert(it!=variable.Last().Value);
+                            //cstl.assert(it!=variable.Last().Value);
                             parameters.Add(it.Key);
                         }
                         //parameters成为了con.related_var的拷贝
@@ -109,13 +109,32 @@ namespace CSP
                         {
                             bool arc_prune = false;
                             for (var it = new PARELM(parameters[shrink_position], 0); //获取的是迭代器
-                                it.get() != parameters[shrink_position].Last(); //原版所有取first和end前都进行了
-                                )
+                                it.get() != parameters[shrink_position].Last();)
                             {
                                 bool need_var = false;
                                 LT arg=new LT();
 
-                                recursion1(arg,parameters,con,need_var,shrink_position,it.get());
+                                need_var=recursion1(arg,parameters,con,need_var,shrink_position,it.get());
+
+                                if (need_var == false)
+                                {
+                                    modify_variable.Add(con.related_var[ shrink_position ]);
+                                    parameters[shrink_position].Remove(it.get());
+                                    it.resultptr++;
+                                    arc_prune = true;
+                                    var it2 = variable[con.related_var[shrink_position]];
+                                    //cstl.assert(it2!=variable.Last());
+                                    foreach (var t in con.related_var)
+                                    {
+                                        if ( t != con.related_var[ shrink_position ] )
+                                        {
+                                            var i = variable[t];
+                                            //cstl.assert( i != variable.Last());
+                                            cstl.assert(i.Key.Count!=0);
+                                            it2.Value[t] = i.Value.Keys.ToList();
+                                        }
+                                    }
+                                }
 
                                 //自增代码
                                 if (arc_prune == false)
@@ -127,6 +146,7 @@ namespace CSP
                     }
                 }
             }
+
         }
     }
 }

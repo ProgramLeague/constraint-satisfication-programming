@@ -31,5 +31,10 @@ namespace CSP
         {
             list.RemoveAt(list.Count-1);
         }
+
+        public static void assert(bool b)
+        {
+            System.Diagnostics.Debug.Assert(b);
+        }
     }
 }
