@@ -3,6 +3,7 @@ using System.Linq;
 using DIDTT=System.Collections.Generic.Dictionary<string,float>;
 using LIDT=System.Collections.Generic.List<string>;
 using LT=System.Collections.Generic.List<float>;
+using KLDSL=System.Collections.Generic.KeyValuePair<System.Collections.Generic.List<float>, System.Collections.Generic.Dictionary<string,System.Collections.Generic.List<string>>>;
 
 using RESULT=CSTD.ptr<System.Collections.Generic.Dictionary<string,float>>; //初始化为DIDTT
 using PARELM=CSTD.ptr<float>; //初始化为float（result类型为LT）
@@ -20,7 +21,7 @@ namespace CSP
             if (arg.Count == parameters.Count)
             {
                 if (con.predicate(arg))
-                    need_var = true;
+                    return true;
             }
             else
             {
@@ -43,10 +44,11 @@ namespace CSP
                         cstl.pop_back(arg);
 
                         if ( need_var )
-                        { return need_var; } //backtracking_search返回点
+                        { return true; } //backtracking_search返回点
                     }
                 }
             }
+            return need_var;
         }
 
         public static RESULT backtracking_search(
@@ -143,6 +145,13 @@ namespace CSP
                                     arc_prune = false;
                             }
                         }
+                        KeyValuePair<string,KLDSL> next_element = cstl.min_element(variable,
+                            (KeyValuePair<string,KLDSL> l, KeyValuePair<string,KLDSL> r) =>
+                            {
+                                return (!cstl.count(partial_assignment, l.Key) ? l.Value.Key.Count : cstl.limitmax) <
+                                       (!cstl.count(partial_assignment, r.Key) ? r.Value.Key.Count : cstl.limitmax);
+                            });
+                        cstl.assert(!cstl.count(partial_assignment,next_element.Key));
                     }
                 }
             }
